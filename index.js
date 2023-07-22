@@ -1,4 +1,3 @@
-
 require('dotenv/config');
 const { Client, IntentsBitField } = require('discord.js');
 const { Configuration, OpenAIApi } = require('openai');
@@ -11,11 +10,12 @@ const client = new Client({
 });
 
 client.on('ready', () => {
-  console.log('The bot is online!');
+  console.log('🟢 The bot is online!');
+  client.user.setActivity('WITH YOUR 🧠');
 });
 
 const configuration = new Configuration({
-  apiKey: "OPENAI_API_KEY",
+  apiKey: "OPEN-API_KEY",
 });
 
 const openai = new OpenAIApi(configuration);
@@ -25,18 +25,18 @@ client.on('messageCreate', async (message) => {
   if (message.channel.id !== "CHANNEL_ID") return;
   if (message.content.startsWith('!')) return;
 
-  let conversationLog = [
-    { role: 'system', content: 'You are a friendly chatbot.' },
-  ];
-
   try {
     const typingMessage = await message.channel.send(`${message.author} <a:q_loadingg:1118877722274443384> generating a response, please wait...`);
 
     // Sending typing status
     await message.channel.sendTyping();
 
-    let prevMessages = await message.channel.messages.fetch({ limit: 15 });
+    let prevMessages = await message.channel.messages.fetch({ limit: 5 });
     prevMessages.reverse();
+
+    let conversationLog = [
+      { role: 'system', content: 'You are a friendly chatbot.' },
+    ];
 
     prevMessages.forEach((msg) => {
       if (message.content.startsWith('!')) return;
@@ -49,24 +49,24 @@ client.on('messageCreate', async (message) => {
       });
     });
 
-    const result = await openai
-      .createChatCompletion({
-        model: 'gpt-3.5-turbo',
-        messages: conversationLog,
-      })
-      .catch((error) => {
-        console.log(`OPENAI ERR: ${error}`);
-      });
+    const result = await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages: conversationLog,
+    });
 
     typingMessage.delete(); // Remove the typing message
 
-    message.reply(result.data.choices[0].message);
+    const reply = result.data.choices[0].message.content;
+
+    // Mention and reply to the user
+    const chunkSize = 1999;
+    for (let i = 0; i < reply.length; i += chunkSize) {
+      const chunk = reply.substring(i, i + chunkSize);
+      await message.reply(chunk);
+    }
   } catch (error) {
     console.log(`ERR: ${error}`);
   }
 });
 
-client.login('YOUR_BOT_TOEKN');
-
-
-￼Enter
+client.login('BOT_TOKEN');
